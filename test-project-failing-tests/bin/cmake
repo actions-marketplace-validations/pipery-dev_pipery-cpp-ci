@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "${1:-}" = "-B" ]; then
+  mkdir -p "${2:-build}"
+  exit 0
+fi
+
+if [ "${1:-}" = "--build" ]; then
+  mkdir -p "${2:-build}"
+  printf 'mock cmake build succeeded\n'
+  exit 0
+fi
+
+exit 0

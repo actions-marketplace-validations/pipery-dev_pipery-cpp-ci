@@ -1,0 +1,17 @@
+name: make-build-system
+description: Run the action against a Makefile-based C++ project.
+source_path: test-project-make
+inputs:
+  project_path: test-project-make
+  build_system: make
+  skip_sast: "true"
+  skip_sca: "true"
+  skip_release: "true"
+  skip_versioning: "true"
+  skip_reintegration: "true"
+expect:
+  log_path: pipery.jsonl
+  success_values: [success, passed, ok, succeeded]
+  required_fields:
+    - name: event
+      value: build

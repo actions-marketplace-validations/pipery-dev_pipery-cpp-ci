@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Added `target_platforms` input for C/C++ per-target build directories and packaging.
+
 ## [1.0.0] - 2026-04-27
 
 ### Added

@@ -1,0 +1,22 @@
+name: cross-platform-compilation
+description: Verify C/C++ target platforms produce per-target build and package artifacts.
+source_path: test-project
+inputs:
+  project_path: test-project
+  build_system: cmake
+  target_platforms: linux/amd64,windows/amd64
+  skip_sast: "true"
+  skip_sca: "true"
+  skip_lint: "true"
+  skip_test: "true"
+  skip_versioning: "true"
+  skip_release: "true"
+  skip_reintegration: "true"
+expect:
+  log_path: pipery.jsonl
+  success_values: [success, passed, ok, succeeded]
+  required_fields:
+    - name: event
+      value: cross_compile
+    - name: target
+      value: windows/amd64

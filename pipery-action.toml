@@ -54,6 +54,12 @@ required = false
 default = ""
 
 [[inputs]]
+name = "target_platforms"
+description = "Comma or whitespace separated OS/ARCH targets for cross-platform compilation, e.g. linux/amd64,windows/amd64,darwin/arm64. Empty builds the host platform."
+required = false
+default = ""
+
+[[inputs]]
 name = "github_token"
 description = "GitHub token for release and reintegration steps."
 required = false

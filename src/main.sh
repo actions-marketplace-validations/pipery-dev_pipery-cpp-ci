@@ -15,6 +15,17 @@ if [ ! -d "$INPUT_PROJECT_PATH" ]; then
   exit 1
 fi
 
+INPUT_PROJECT_PATH="$(cd "$INPUT_PROJECT_PATH" && pwd)"
+export INPUT_PROJECT_PATH
+
+if [ -d "$INPUT_PROJECT_PATH/bin" ]; then
+  export PATH="$INPUT_PROJECT_PATH/bin:$PATH"
+fi
+
+if [ -d "$INPUT_PROJECT_PATH/mock-bin" ]; then
+  export PATH="$INPUT_PROJECT_PATH/mock-bin:$PATH"
+fi
+
 echo "Starting C/C++ CI pipeline for: $INPUT_PROJECT_PATH"
 echo "Log file: $INPUT_LOG_FILE"
 

@@ -58,6 +58,7 @@ jobs:
 | `build_system` | `auto` | Build system to use: `auto`, `cmake`, `make`, or `meson`. |
 | `compiler` | `g++` | C++ compiler to use (e.g., `g++`, `clang++`). |
 | `cmake_flags` | `` | Extra flags to pass to the cmake configure step. |
+| `target_platforms` | `` | Comma or whitespace separated `OS/ARCH` targets for cross-platform compilation, e.g. `linux/amd64,windows/amd64,darwin/arm64`. Empty builds the host platform. Targeted CMake builds set `CMAKE_SYSTEM_NAME` and `CMAKE_SYSTEM_PROCESSOR`; the runner must provide the matching toolchain or you can pass one through `cmake_flags`. |
 | `tests_path` | `` | Test filter pattern passed to ctest -R or equivalent. |
 | `version_bump` | `patch` | Version bump type: `patch`, `minor`, or `major`. |
 | `target_branch` | `main` | Target branch for reintegration. |
@@ -116,7 +117,19 @@ jobs:
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### Example 4: Makefile-based project
+### Example 4: Cross-platform CMake build
+
+```yaml
+- uses: pipery-dev/pipery-cpp-ci@v1
+  with:
+    project_path: .
+    build_system: cmake
+    target_platforms: linux/amd64,windows/amd64
+    cmake_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/mingw.cmake
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Example 5: Makefile-based project
 
 ```yaml
 - uses: pipery-dev/pipery-cpp-ci@v1
@@ -126,7 +139,7 @@ jobs:
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### Example 5: Run specific test suite
+### Example 6: Run specific test suite
 
 ```yaml
 - uses: pipery-dev/pipery-cpp-ci@v1
