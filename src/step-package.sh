@@ -13,7 +13,8 @@ VERSION="${INPUT_VERSION:-0.0.0}"
 TARGET_PLATFORMS="${INPUT_TARGET_PLATFORMS:-}"
 
 if [ -n "$TARGET_PLATFORMS" ]; then
-  for PLATFORM in $(printf '%s\n' "$TARGET_PLATFORMS" | tr ', ' '\n\n' | sed '/^$/d'); do
+  for PLATFORM in $(printf '%s\n' "$TARGET_PLATFORMS" | sed 's/[[:space:],][[:space:],]*/\
+/g; /^$/d'); do
     OS="${PLATFORM%/*}"
     ARCH="${PLATFORM#*/}"
     BUILD_DIR="build/${OS}-${ARCH}"

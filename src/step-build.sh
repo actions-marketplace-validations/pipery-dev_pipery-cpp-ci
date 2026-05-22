@@ -30,7 +30,8 @@ echo "Building with: $BUILD_SYSTEM"
 
 _platforms() {
   if [ -n "$TARGET_PLATFORMS" ]; then
-    printf '%s\n' "$TARGET_PLATFORMS" | tr ', ' '\n\n' | sed '/^$/d'
+    printf '%s\n' "$TARGET_PLATFORMS" | sed 's/[[:space:],][[:space:],]*/\
+/g; /^$/d'
   else
     printf 'host/host\n'
   fi
