@@ -1,3 +1,13 @@
+# Release v1.0.1
+
+Repository: `pipery-dev/pipery-cpp-ci`
+
+## Deployment
+
+Reference this release as `pipery-dev/pipery-cpp-ci@v1.0.1`, `pipery-dev/pipery-cpp-ci@v1.0`, or `pipery-dev/pipery-cpp-ci@v1`.
+
+## Changelog
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
