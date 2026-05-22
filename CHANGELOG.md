@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 - _Nothing yet._
 
+## [1.0.2]
+
+- _Nothing yet._
+
 ## [1.0.1]
 
 - Added `target_platforms` input for C/C++ per-target build directories and packaging.
