@@ -7,7 +7,7 @@ CI pipeline for C/C++: SAST, SCA, lint, build, test, versioning, packaging, rele
 - Owner: `pipery-dev`
 - Repository: `pipery-cpp-ci`
 - Marketplace category: `continuous-integration`
-- Current version: `1.0.3`
+- Current version: `1.1.0`
 
 ## Usage
 
