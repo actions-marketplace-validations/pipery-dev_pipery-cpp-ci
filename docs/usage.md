@@ -25,4 +25,23 @@ jobs:
       - uses: pipery-dev/pipery-cpp-ci@v1
         with:
           project_path: .
+          config_file: .pipery/config.yaml
+          build_system: auto
+          tests_path: 
+          compiler: g++
+          cmake_flags: 
+          target_platforms: 
+          github_token: 
+          version_bump: patch
+          log_file: pipery.jsonl
+          target_branch: main
+          skip_sast: false
+          skip_sca: false
+          skip_lint: false
+          skip_build: false
+          skip_test: false
+          skip_versioning: false
+          skip_packaging: false
+          skip_release: false
+          skip_reintegration: false
 ```

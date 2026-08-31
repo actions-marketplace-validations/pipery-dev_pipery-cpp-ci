@@ -1,0 +1,297 @@
+spec:
+  inputs:
+    inputs:
+    - name: PROJECT_PATH
+      default: .
+      description: Path to the project source tree
+    - name: CPP_VERSION
+      default: '11'
+      description: C++ runtime version
+    - name: TESTS_PATH
+      default: ''
+      description: Tests Path
+    - name: VERSION_BUMP
+      default: patch
+      description: Version Bump
+    - name: GITHUB_TOKEN
+      description: Github Token
+  outputs:
+  - name: LOG_FILE
+    description: Pipery JSONL log file with pipeline events
+    default: pipery.jsonl
+variables:
+  PROJECT_PATH: .
+  CONFIG_FILE: .pipery/config.yaml
+  BUILD_SYSTEM: auto
+  COMPILER: g++
+  CMAKE_FLAGS: ''
+  TESTS_PATH: ''
+  VERSION_BUMP: patch
+  SKIP_SAST: 'false'
+  SKIP_SCA: 'false'
+  SKIP_LINT: 'false'
+  SKIP_BUILD: 'false'
+  SKIP_TEST: 'false'
+  SKIP_VERSIONING: 'false'
+  SKIP_PACKAGING: 'false'
+  SKIP_RELEASE: 'false'
+  SKIP_REINTEGRATION: 'false'
+  LOG_FILE: pipery.jsonl
+  TARGET_BRANCH: main
+  GITHUB_TOKEN: ''
+stages:
+- checkout
+- setup
+- sast
+- sca
+- lint
+- build
+- test
+- versioning
+- packaging
+- release
+- reintegration
+- logs
+checkout:
+  stage: checkout
+  image: alpine:latest
+  script:
+  - echo "Repository checked out"
+setup:
+  stage: setup
+  image: gcc:latest
+  script:
+  - gcc --version
+  - g++ --version
+  - cmake --version || echo "cmake not installed"
+  - apt-get update && apt-get install -y cmake make
+  artifacts:
+    expire_in: 1 day
+sast_scan:
+  stage: sast
+  image: gcc:latest
+  script:
+  - bash ./src/step-sast.sh
+  env:
+    INPUT_PROJECT_PATH: $PROJECT_PATH
+    INPUT_CONFIG_FILE: $CONFIG_FILE
+    INPUT_LOG_FILE: $LOG_FILE
+  allow_failure: true
+  rules:
+  - if: $SKIP_SAST == "true"
+    when: never
+  - when: on_success
+  artifacts:
+    paths:
+    - $LOG_FILE
+    expire_in: 30 days
+sca_scan:
+  stage: sca
+  image: gcc:latest
+  script:
+  - bash ./src/step-sca.sh
+  env:
+    INPUT_PROJECT_PATH: $PROJECT_PATH
+    INPUT_CONFIG_FILE: $CONFIG_FILE
+    INPUT_LOG_FILE: $LOG_FILE
+  allow_failure: true
+  rules:
+  - if: $SKIP_SCA == "true"
+    when: never
+  - when: on_success
+  artifacts:
+    paths:
+    - $LOG_FILE
+    expire_in: 30 days
+lint:
+  stage: lint
+  image: gcc:latest
+  script:
+  - bash ./src/step-lint.sh
+  env:
+    INPUT_PROJECT_PATH: $PROJECT_PATH
+    INPUT_LOG_FILE: $LOG_FILE
+  allow_failure: true
+  rules:
+  - if: $SKIP_LINT == "true"
+    when: never
+  - when: on_success
+build:
+  stage: build
+  image: gcc:latest
+  dependencies:
+  - setup
+  script:
+  - bash ./src/step-build.sh
+  env:
+    INPUT_PROJECT_PATH: $PROJECT_PATH
+    INPUT_LOG_FILE: $LOG_FILE
+  rules:
+  - if: $SKIP_BUILD == "true"
+    when: never
+  - when: on_success
+  artifacts:
+    paths:
+    - $PROJECT_PATH/build/
+    expire_in: 1 day
+test:
+  stage: test
+  image: gcc:latest
+  dependencies:
+  - build
+  script:
+  - bash ./src/step-test.sh
+  env:
+    INPUT_PROJECT_PATH: $PROJECT_PATH
+    INPUT_TESTS_PATH: $TESTS_PATH
+    INPUT_LOG_FILE: $LOG_FILE
+  rules:
+  - if: $SKIP_TEST == "true"
+    when: never
+  - when: on_success
+  allow_failure: true
+  artifacts:
+    paths:
+    - $PROJECT_PATH/build/Testing/
+    expire_in: 30 days
+versioning:
+  stage: versioning
+  image: gcc:latest
+  script:
+  - bash ./src/step-version.sh
+  env:
+    INPUT_PROJECT_PATH: $PROJECT_PATH
+    INPUT_VERSION_BUMP: $VERSION_BUMP
+    INPUT_LOG_FILE: $LOG_FILE
+  artifacts:
+    paths:
+    - version_info.txt
+    - $LOG_FILE
+    expire_in: 30 days
+  rules:
+  - if: $SKIP_VERSIONING == "true"
+    when: never
+  - when: on_success
+packaging:
+  stage: packaging
+  image: gcc:latest
+  dependencies:
+  - build
+  script:
+  - bash ./src/step-package.sh
+  env:
+    INPUT_PROJECT_PATH: $PROJECT_PATH
+    INPUT_LOG_FILE: $LOG_FILE
+  rules:
+  - if: $SKIP_PACKAGING == "true"
+    when: never
+  - when: on_success
+  artifacts:
+    paths:
+    - $PROJECT_PATH/build/artifacts.tar.gz
+    expire_in: 30 days
+release:
+  stage: release
+  image: alpine:latest
+  script:
+  - bash ./src/step-release.sh
+  env:
+    INPUT_PROJECT_PATH: $PROJECT_PATH
+    INPUT_LOG_FILE: $LOG_FILE
+  rules:
+  - if: $SKIP_RELEASE == "true"
+    when: never
+  - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+    when: on_success
+  - when: manual
+reintegration:
+  stage: reintegration
+  image: alpine:latest
+  script:
+  - bash ./src/step-reintegrate.sh
+  env:
+    INPUT_PROJECT_PATH: $PROJECT_PATH
+    INPUT_LOG_FILE: $LOG_FILE
+    INPUT_TARGET_BRANCH: $TARGET_BRANCH
+    GITHUB_TOKEN: $GITHUB_TOKEN
+  rules:
+  - if: $SKIP_REINTEGRATION == "true"
+    when: never
+  - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+    when: on_success
+  - when: manual
+  allow_failure: true
+publish_logs:
+  stage: logs
+  image: alpine:latest
+  script:
+  - echo "C/C++ pipeline complete"
+  artifacts:
+    paths:
+    - $LOG_FILE
+    - version_info.txt
+    expire_in: 90 days
+  when: always
+dashboard_link:
+  stage: logs
+  image: alpine:latest
+  needs:
+  - publish_logs
+  script:
+  - echo "Generating Pipery Dashboard link..."
+  - '# Get the artifact URL from GitLab API
+
+    ARTIFACT_URL="${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts"
+
+    echo "Artifact URL: $ARTIFACT_URL"
+
+
+    # URL encode the artifact path
+
+    ENCODED_URL=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1],safe=''''))"
+    "$ARTIFACT_URL")
+
+
+    # Create dashboard link
+
+    DASHBOARD_URL="https://dash.pipery.dev/?artifact=${ENCODED_URL}"
+
+
+    # Output the link in markdown format
+
+    echo ""
+
+    echo "=========================================="
+
+    echo "Pipery Dashboard Link"
+
+    echo "=========================================="
+
+    echo "[$DASHBOARD_URL]($DASHBOARD_URL)"
+
+    echo ""
+
+    echo "Direct URL:"
+
+    echo "$DASHBOARD_URL"
+
+    echo "=========================================="
+
+    echo ""
+
+
+    # Save to artifact file for persistence
+
+    mkdir -p artifacts
+
+    echo "DASHBOARD_URL=$DASHBOARD_URL" > artifacts/dashboard_link.env
+
+    '
+  artifacts:
+    paths:
+    - artifacts/
+    reports:
+      dotenv: artifacts/dashboard_link.env
+    expire_in: 90 days
+  allow_failure: true
+  when: always

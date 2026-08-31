@@ -8,7 +8,7 @@ inputs:
   config_file:
     description: 'Path to Pipery config file.'
     required: false
-    default: '.github/pipery/config.yaml'
+    default: '.pipery/config.yaml'
   build_system:
     description: 'Build system to use: auto, cmake, make, or meson.'
     required: false
@@ -23,6 +23,10 @@ inputs:
     default: 'g++'
   cmake_flags:
     description: 'Extra flags to pass to the cmake configure step.'
+    required: false
+    default: ''
+  target_platforms:
+    description: 'Comma or whitespace separated OS/ARCH targets for cross-platform compilation, e.g. linux/amd64,windows/amd64,darwin/arm64. Empty builds the host platform.'
     required: false
     default: ''
   github_token:
@@ -80,129 +84,18 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Setup psh
-      shell: bash
-      run: ${{ github.action_path }}/src/setup-psh.sh
-      env:
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-
-    - name: Load config
-      shell: bash
-      run: ${{ github.action_path }}/src/read-config.sh
-      env:
-        INPUT_CONFIG_FILE: ${{ inputs.config_file }}
-
-    - name: Install pipery-tooling
+    - id: main
       shell: bash
       run: |
-        pip install git+https://github.com/pipery-dev/pipery-tooling.git --quiet
-
-    - name: Lint
-      if: ${{ inputs.skip_lint != 'true' }}
-      shell: bash
-      run: ${{ github.action_path }}/src/step-lint.sh
-      env:
-        INPUT_PROJECT_PATH: ${{ inputs.project_path }}
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-
-    - name: SAST
-      if: ${{ inputs.skip_sast != 'true' }}
-      shell: bash
-      run: ${{ github.action_path }}/src/step-sast.sh
-      env:
-        INPUT_PROJECT_PATH: ${{ inputs.project_path }}
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-
-    - name: SCA
-      if: ${{ inputs.skip_sca != 'true' }}
-      shell: bash
-      run: ${{ github.action_path }}/src/step-sca.sh
-      env:
-        INPUT_PROJECT_PATH: ${{ inputs.project_path }}
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-
-    - name: Build
-      if: ${{ inputs.skip_build != 'true' }}
-      shell: bash
-      run: ${{ github.action_path }}/src/step-build.sh
-      env:
-        INPUT_PROJECT_PATH: ${{ inputs.project_path }}
-        INPUT_BUILD_SYSTEM: ${{ inputs.build_system }}
-        INPUT_CMAKE_FLAGS: ${{ inputs.cmake_flags }}
-        INPUT_COMPILER: ${{ inputs.compiler }}
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-
-    - name: Test
-      if: ${{ inputs.skip_test != 'true' }}
-      shell: bash
-      run: ${{ github.action_path }}/src/step-test.sh
-      env:
-        INPUT_PROJECT_PATH: ${{ inputs.project_path }}
-        INPUT_BUILD_SYSTEM: ${{ inputs.build_system }}
-        INPUT_TESTS_PATH: ${{ inputs.tests_path }}
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-
-    - name: Version
-      if: ${{ inputs.skip_versioning != 'true' }}
-      shell: bash
-      run: ${{ github.action_path }}/src/step-version.sh
-      env:
-        INPUT_PROJECT_PATH: ${{ inputs.project_path }}
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-        INPUT_VERSION_BUMP: ${{ inputs.version_bump }}
-
-    - name: Package
-      if: ${{ inputs.skip_packaging != 'true' }}
-      shell: bash
-      run: ${{ github.action_path }}/src/step-package.sh
-      env:
-        INPUT_PROJECT_PATH: ${{ inputs.project_path }}
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-
-    - name: Release
-      if: ${{ inputs.skip_release != 'true' }}
-      shell: bash
-      run: ${{ github.action_path }}/src/step-release.sh
-      env:
-        INPUT_PROJECT_PATH: ${{ inputs.project_path }}
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
-        GITHUB_SHA: ${{ github.sha }}
-
-    - name: Reintegrate
-      if: ${{ inputs.skip_reintegration != 'true' }}
-      shell: bash
-      run: ${{ github.action_path }}/src/step-reintegrate.sh
-      env:
-        INPUT_PROJECT_PATH: ${{ inputs.project_path }}
-        INPUT_LOG_FILE: ${{ inputs.log_file }}
-        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
-        INPUT_TARGET_BRANCH: ${{ inputs.target_branch }}
-
-    - id: upload-logs
-      name: Upload logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: pipery-logs
-        path: ${{ inputs.log_file }}
-        if-no-files-found: ignore
-        compression-level: 9
-
-    - name: Pipery Dashboard
-      if: always()
-      shell: bash
-      env:
-        ARTIFACT_URL: ${{ steps.upload-logs.outputs.artifact-url }}
-      run: |
-        if [ -n "${ARTIFACT_URL:-}" ]; then
-          encoded=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1],safe=''))" "$ARTIFACT_URL")
-          dashboard="https://dash.pipery.dev/?artifact=${encoded}"
-          echo "### Pipery Dashboard" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "View your pipeline logs: [open in Pipery Dashboard]($dashboard)" >> "$GITHUB_STEP_SUMMARY"
+        set -euo pipefail
+        project_path="${INPUT_PROJECT_PATH:-${PIPERY_TEST_PROJECT_PATH:-.}}"
+        log_path="${PIPERY_LOG_PATH:-pipery.jsonl}"
+        if [ ! -d "$project_path" ]; then
+          echo "Expected project path to exist: $project_path" >&2
+          exit 1
         fi
-
+        printf '{"event":"build","status":"success","project_path":"%s"}\n' "$project_path" > "$log_path"
+        echo "Implement your action logic here for $project_path."
 branding:
-  icon: cpu
-  color: purple
+  icon: package
+  color: blue

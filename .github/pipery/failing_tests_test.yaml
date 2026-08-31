@@ -1,0 +1,14 @@
+name: failing-tests
+description: Verify the action fails when the project test target fails.
+source_path: test-project-failing-tests
+inputs:
+  project_path: test-project-failing-tests
+  build_system: make
+  skip_sast: "true"
+  skip_sca: "true"
+  skip_release: "true"
+  skip_versioning: "true"
+  skip_packaging: "true"
+  skip_reintegration: "true"
+expect:
+  failure: true

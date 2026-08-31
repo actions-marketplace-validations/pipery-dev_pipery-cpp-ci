@@ -1,0 +1,16 @@
+name: test-failures-detected
+description: Action must exit non-zero when CTest reports a failing test.
+source_path: test-project-failing-tests
+inputs:
+  project_path: test-project-failing-tests
+  build_system: cmake
+  tests_path: failing-smoke
+  skip_sast: "true"
+  skip_sca: "true"
+  skip_lint: "true"
+  skip_versioning: "true"
+  skip_packaging: "true"
+  skip_release: "true"
+  skip_reintegration: "true"
+expect:
+  failure: true

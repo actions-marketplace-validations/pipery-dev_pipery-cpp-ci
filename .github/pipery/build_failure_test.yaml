@@ -1,0 +1,16 @@
+name: build-errors-detected
+description: Action must exit non-zero when C++ code does not compile.
+source_path: test-project-failing-build
+inputs:
+  project_path: test-project-failing-build
+  build_system: cmake
+  skip_sast: "true"
+  skip_sca: "true"
+  skip_lint: "true"
+  skip_test: "true"
+  skip_versioning: "true"
+  skip_packaging: "true"
+  skip_release: "true"
+  skip_reintegration: "true"
+expect:
+  failure: true
